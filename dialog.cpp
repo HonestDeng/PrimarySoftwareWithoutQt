@@ -1,22 +1,22 @@
 #include "dialog.h"
 #include <iostream>
 
-double Dialog::cal(double x) {
+double Dialog::cal(double x, const std::string& id) {
     double res = 0;
+    const auto& exp = exps[id];
     for (const auto &term: exp) {
         res += term.second * pow(x, term.first);
     }
     return res;
 }
 
-void Dialog::setLimit(double l, double r) {
-    this->xmin = l;
-    this->xmax = r;
-    freshLine();
+void Dialog::freshLine(const std::string &id) {
 }
 
-void Dialog::freshLine() {
-    return;
+void Dialog::freshAll() {
+    for (const auto &exp: exps) {
+        freshLine(exp.first);
+    }
 }
 
 bool Dialog::match(TokenType expect) {
@@ -38,10 +38,10 @@ bool Dialog::parse(std::string &com) {
             return false;
         }
 
-        if(token == PLUS){
+        if (token == PLUS) {
             lflag = 1;
             match(PLUS);
-        }else if(token == MINUS){
+        } else if (token == MINUS) {
             lflag = -1;
             match(MINUS);
         }
@@ -54,10 +54,10 @@ bool Dialog::parse(std::string &com) {
             return false;
         }
 
-        if(token == PLUS){
+        if (token == PLUS) {
             rflag = 1;
             match(PLUS);
-        }else if(token == MINUS){
+        } else if (token == MINUS) {
             rflag = -1;
             match(MINUS);
         }
@@ -68,8 +68,17 @@ bool Dialog::parse(std::string &com) {
 
         this->xmin = std::stod(l) * lflag;
         this->xmax = std::stod(r) * rflag;
+
     } else if (token == DEFINE) {
-        if (!match(DEFINE) || !match(ID) || !match(EQ)) {
+        if(!match(DEFINE)) {
+            return false;
+        }
+        std::string id = tokenString;
+        if(exps.count(id) > 0){
+            // 如果这条线已经出现过了
+            exps[id].clear();
+        }
+        if (!match(ID) || !match(EQ)) {
             return false;
         }
         while (token != SEMI) {
@@ -121,8 +130,7 @@ bool Dialog::parse(std::string &com) {
                     index = 1;  // 第5种情况
                 }
             }
-
-            exp[index] = flag * correlation;
+            exps[id][index] = correlation * flag;
         }
     } else if (token == SET) { // set X[0] = 12;
         std::string index, correlation;
@@ -130,10 +138,10 @@ bool Dialog::parse(std::string &com) {
         if (!match(SET) || !match(ID) || !match(LPARAM)) {
             return false;
         }
-        if(token == PLUS){
+        if (token == PLUS) {
             iflag = 1;
             match(PLUS);
-        }else if(token == MINUS){
+        } else if (token == MINUS) {
             iflag = -1;
             match(MINUS);
         }
@@ -141,31 +149,48 @@ bool Dialog::parse(std::string &com) {
         if (!match(NUMBER) || !match(RPARAM)) {
             return false;
         }
-        if(!match(EQ)){
+        if (!match(EQ)) {
             return false;
         }
 
-        if(token == PLUS){
+        if (token == PLUS) {
             cflag = 1;
             match(PLUS);
-        }else if(token == MINUS){
+        } else if (token == MINUS) {
             cflag = -1;
             match(MINUS);
         }
         correlation = tokenString;
-
         if (!match(NUMBER)) {
             return false;
         }
+
+        if (!match(AT)) {
+            return false;
+        }
+        std::string id = tokenString;
+        if (!match(ID)) {
+            return false;
+        }
+        auto &exp = exps[id];
         exp[std::stoi(index) * iflag] = std::stod(correlation) * cflag;
     } else if (token == CLEAR) {  // clear;
-        exp.clear();
-        freshLine();
-    } else if (token == SHOW) { // show;
-        std::cout << "====== exp ======" << std::endl;
-        for (const auto &term: exp) {
-            std::cout << term.second << "*X^" << term.first << std::endl;
+        if (!match(CLEAR) || !match(AT)) {
+            return false;
         }
+        std::string id = tokenString;
+        auto &exp = exps[id];
+        exp.clear();
+        freshLine(id);
+    } else if (token == SHOW) { // show;
+        for (const auto &exp: exps) {
+            std::cout << "====== exp:" << exp.first << " ======" << std::endl;
+            for (const auto &term: exp.second) {
+                std::cout << std::to_string(term.second) << "*X^" << std::to_string(term.first) << std::endl;
+            }
+        }
+    } else if (token == REFRESH) {
+        freshAll();
     } else {
         return false;
     }
@@ -182,9 +207,9 @@ void Dialog::getToken() {
     TokenType tokenType = ERROR;
     while (state != 5 && ichar <= command.length()) {
         char c;
-        if(ichar < command.length()){
+        if (ichar < command.length()) {
             c = command[ichar++];
-        }else{
+        } else {
             c = '\0';
         }
         switch (state) {
@@ -301,6 +326,10 @@ void Dialog::getToken() {
             tokenType = CLEAR;
         } else if (tokenString == "show") {
             tokenType = SHOW;
+        } else if (tokenString == "at") {
+            tokenType = AT;
+        } else if (tokenString == "refresh") {
+            tokenType = REFRESH;
         }
     }
     token = tokenType;

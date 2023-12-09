@@ -167,117 +167,117 @@ TEST(PARSE, LIMIT3) {
 
 TEST(PARSE, SET1) {
     Dialog dialog;
-    std::string command = "set X[0] = 1";
+    std::string command = "set X[0] = 1 at Y;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp[0], 1);
+    EXPECT_EQ(dialog.exps["Y"][0], 1);
 }
 
 TEST(PARSE, SET2) {
     Dialog dialog;
-    std::string command = "set X[123] = -1324;";
+    std::string command = "set X[123] = -1324 at Y;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp[123], -1324);
+    EXPECT_EQ(dialog.exps["Y"][123], -1324);
 }
 
 TEST(PARSE, DEFINE1) {
     Dialog dialog;
     std::string command = "define Y = 2*X^332;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[332], 2);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][332], 2);
 }
 
 TEST(PARSE, DEFINE2) {
     Dialog dialog;
     std::string command = "define Y = -2*X^332;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[332], -2);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][332], -2);
 }
 
 TEST(PARSE, DEFINE3) {
     Dialog dialog;
     std::string command = "define Y = X^332;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[332], 1);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][332], 1);
 }
 
 TEST(PARSE, DEFINE4) {
     Dialog dialog;
     std::string command = "define Y = -X^332;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[332], -1);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][332], -1);
 }
 
 TEST(PARSE, DEFINE5) {
     Dialog dialog;
     std::string command = "define Y = -X;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[1], -1);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][1], -1);
 }
 
 TEST(PARSE, DEFINE6) {
     Dialog dialog;
     std::string command = "define Y = X;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[1], 1);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][1], 1);
 }
 
 TEST(PARSE, DEFINE7) {
     Dialog dialog;
     std::string command = "define Y = 2;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[0], 2);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][0], 2);
 }
 
 TEST(PARSE, DEFINE8) {
     Dialog dialog;
     std::string command = "define Y = -2;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 1);
-    EXPECT_EQ(dialog.exp[0], -2);
+    EXPECT_EQ(dialog.exps["Y"].size(), 1);
+    EXPECT_EQ(dialog.exps["Y"][0], -2);
 }
 
 TEST(PARSE, DEFINE9) {
     Dialog dialog;
     std::string command = "define Y = -2 + X^2 - 32*X^4 - 123*X^3 - X;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 5);
-    EXPECT_EQ(dialog.exp[0], -2);
-    EXPECT_EQ(dialog.exp[1], -1);
-    EXPECT_EQ(dialog.exp[2], 1);
-    EXPECT_EQ(dialog.exp[4], -32);
-    EXPECT_EQ(dialog.exp[3], -123);
+    EXPECT_EQ(dialog.exps["Y"].size(), 5);
+    EXPECT_EQ(dialog.exps["Y"][0], -2);
+    EXPECT_EQ(dialog.exps["Y"][1], -1);
+    EXPECT_EQ(dialog.exps["Y"][2], 1);
+    EXPECT_EQ(dialog.exps["Y"][4], -32);
+    EXPECT_EQ(dialog.exps["Y"][3], -123);
 }
 
 TEST(SYTHESIS, TEST1) {
     Dialog dialog;
     std::string command = "define Y = -2 -X + X^2 - 123*X^3 - 32*X^4;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp.size(), 5);
-    EXPECT_EQ(dialog.exp[0], -2);
-    EXPECT_EQ(dialog.exp[1], -1);
-    EXPECT_EQ(dialog.exp[2], 1);
-    EXPECT_EQ(dialog.exp[4], -32);
-    EXPECT_EQ(dialog.exp[3], -123);
+    EXPECT_EQ(dialog.exps["Y"].size(), 5);
+    EXPECT_EQ(dialog.exps["Y"][0], -2);
+    EXPECT_EQ(dialog.exps["Y"][1], -1);
+    EXPECT_EQ(dialog.exps["Y"][2], 1);
+    EXPECT_EQ(dialog.exps["Y"][4], -32);
+    EXPECT_EQ(dialog.exps["Y"][3], -123);
 
-    command = "set X[0] = 4;";
+    command = "set X[0] = 4 at Y;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp[0], 4);
+    EXPECT_EQ(dialog.exps["Y"][0], 4);
 
     command = "limit -12, 10";
     dialog.parse(command);
     EXPECT_EQ(dialog.xmin, -12);
     EXPECT_EQ(dialog.xmax, 10);
 
-    command = "set X[5] = 6;";
+    command = "set X[5] = 6 at Y;";
     dialog.parse(command);
-    EXPECT_EQ(dialog.exp[5], 6);
+    EXPECT_EQ(dialog.exps["Y"][5], 6);
 }
 
 int main() {
