@@ -30,27 +30,46 @@ bool Dialog::match(TokenType expect) {
 bool Dialog::parse(std::string &com) {
     command = com;
     ichar = 0;
+    getToken();
     if (token == LIMIT) {
         std::string l, r;
+        int lflag = 1, rflag = 1;
         if (!match(LIMIT)) {
             return false;
         }
+
+        if(token == PLUS){
+            lflag = 1;
+            match(PLUS);
+        }else if(token == MINUS){
+            lflag = -1;
+            match(MINUS);
+        }
         l = tokenString;
         if (!match(NUMBER)) {
             return false;
         }
-        r = tokenString;
+
         if (!match(COMMA)) {
             return false;
         }
-        l = tokenString;
+
+        if(token == PLUS){
+            rflag = 1;
+            match(PLUS);
+        }else if(token == MINUS){
+            rflag = -1;
+            match(MINUS);
+        }
+        r = tokenString;
         if (!match(NUMBER)) {
             return false;
         }
-        this->xmin = std::stod(l);
-        this->xmax = std::stod(r);
+
+        this->xmin = std::stod(l) * lflag;
+        this->xmax = std::stod(r) * rflag;
     } else if (token == DEFINE) {
-        if (!match(DEFINE) && !match(ID) && !match(EQ)) {
+        if (!match(DEFINE) || !match(ID) || !match(EQ)) {
             return false;
         }
         while (token != SEMI) {
@@ -74,8 +93,7 @@ bool Dialog::parse(std::string &com) {
                 correlation = std::stod(tokenString);  // 确定系数
                 match(NUMBER);
                 if (token == MUL) { // 第1，2种情况
-                    match(MUL);
-                    if (!match(MUL) && !match(ID)) {
+                    if (!match(MUL) || !match(ID)) {
                         return false;
                     }
                     if (token == POWER) { // 第1种情况
@@ -104,27 +122,46 @@ bool Dialog::parse(std::string &com) {
                 }
             }
 
-
+            exp[index] = flag * correlation;
         }
-
-    } else if (token == SET) {
+    } else if (token == SET) { // set X[0] = 12;
         std::string index, correlation;
-        if (!match(SET) && !match(ID) && !match(LPARAM)) {
+        int iflag = 1, cflag = 1;
+        if (!match(SET) || !match(ID) || !match(LPARAM)) {
             return false;
+        }
+        if(token == PLUS){
+            iflag = 1;
+            match(PLUS);
+        }else if(token == MINUS){
+            iflag = -1;
+            match(MINUS);
         }
         index = tokenString;
-        if (!match(NUMBER) && !match(RPARAM) && !match(EQ)) {
+        if (!match(NUMBER) || !match(RPARAM)) {
             return false;
         }
+        if(!match(EQ)){
+            return false;
+        }
+
+        if(token == PLUS){
+            cflag = 1;
+            match(PLUS);
+        }else if(token == MINUS){
+            cflag = -1;
+            match(MINUS);
+        }
         correlation = tokenString;
+
         if (!match(NUMBER)) {
             return false;
         }
-        exp[std::stoi(index)] = std::stod(correlation);
-    } else if (token == CLEAR) {
+        exp[std::stoi(index) * iflag] = std::stod(correlation) * cflag;
+    } else if (token == CLEAR) {  // clear;
         exp.clear();
         freshLine();
-    } else if (token == SHOW) {
+    } else if (token == SHOW) { // show;
         std::cout << "====== exp ======" << std::endl;
         for (const auto &term: exp) {
             std::cout << term.second << "*X^" << term.first << std::endl;
@@ -143,8 +180,13 @@ void Dialog::getToken() {
     tokenString = "";
     int state = 0;
     TokenType tokenType = ERROR;
-    while (state != 5 && ichar < command.length()) {
-        auto c = command[ichar++];
+    while (state != 5 && ichar <= command.length()) {
+        char c;
+        if(ichar < command.length()){
+            c = command[ichar++];
+        }else{
+            c = '\0';
+        }
         switch (state) {
             case 0:
                 if (c == '\t' || c == ' ') {
